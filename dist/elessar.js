@@ -191,7 +191,11 @@ var Range = Element.extend(vertical).extend({
       this.$el.prepend('<div class="elessar-handle">').append('<div class="elessar-handle">');
       this.on('mouseenter.elessar touchstart.elessar', $.proxy(this.removePhantom, this));
       this.on('mousedown.elessar touchstart.elessar', $.proxy(this.mousedown, this));
-      this.on('click', $.proxy(this.click, this));
+
+      if (this.perant.options.allowDelete) {
+        this.on('click', '.elessar-delete', $.proxy(this.deleteRange, this));
+      }
+
     } else {
       this.$el.addClass('elessar-readonly');
     }
@@ -317,26 +321,13 @@ var Range = Element.extend(vertical).extend({
     function sign(x)   { return x ? x < 0 ? -1 : 1 : 0; }
   },
 
-  click: function(ev) {
+  deleteRange: function(ev) {
     ev.stopPropagation();
     ev.preventDefault();
 
     var self = this;
 
-    if(ev.which !== 2 || !this.perant.options.allowDelete) return;
-
-    if(this.deleteConfirm) {
-      this.perant.removeRange(this);
-      clearTimeout(this.deleteTimeout);
-    } else {
-      this.$el.addClass('elessar-delete-confirm');
-      this.deleteConfirm = true;
-
-      this.deleteTimeout = setTimeout(function() {
-        self.$el.removeClass('elessar-delete-confirm');
-        self.deleteConfirm = false;
-      }, this.perant.options.deleteTimeout);
-    }
+    this.perant.removeRange(this);
   },
 
   mousedown: function(ev) {
@@ -498,13 +489,15 @@ var RangeBar = Element.extend(vertical).extend({
     if(options.values) this.setVal(options.values);
 
     if(options.bgLabels) {
-      options.bgMark = { count: options.bgLabels };
+      options.bgMark = { count: options.bgLabels, showLast: false };
     }
 
     if(options.bgMark) {
       this.$markContainer = $('<div class="elessar-labels">').appendTo(this.$el);
       if(options.bgMark.count) {
-        for(var i = 0; i < options.bgMark.count; ++i) {
+        var count = options.bgMark.showLast ? options.bgMark.count + 1 : options.bgMark.count
+
+        for(var i = 0; i < count; ++i) {
           this.$markContainer.append((new Mark({
             label: options.bgMark.label,
             value: i / options.bgMark.count,
